@@ -8,8 +8,8 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Skip button -->
-    <button id="skipButton" class="skip-button hidden">OMITIR INTRO</button>
+    <!-- Skip Intro Button - appears on early phases -->
+    <button id="skipIntroButton" class="skip-intro-button">OMITIR INTRO</button>
     
     <!-- Scanlines overlay for CRT effect -->
     <div class="scanlines"></div>
@@ -77,9 +77,9 @@
                     <div class="protocol-header">PROTOCOLO 1: INSPECCIÓN SINTÁCTICA</div>
                     <div class="protocol-status status-critical">REQUIERE ATENCIÓN INMEDIATA</div>
                 </div>
-                <div id="protocol2" class="protocol-block clickable locked">
+                <div id="protocol2" class="protocol-block clickable">
                     <div class="protocol-header">PROTOCOLO 2: CALIBRACIÓN DE SECUENCIA</div>
-                    <div class="protocol-status status-locked">BLOQUEADO - Requiere código de acceso</div>
+                    <div class="protocol-status status-locked">🔒 REQUIERE CÓDIGO DE ACCESO</div>
                 </div>
             </div>
         </div>
@@ -89,7 +89,8 @@
     <div id="levelModal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modalTitle">SELECCIONAR RANGO DE MISIÓN</h3>
+                <h3 id="levelModalTitle">SELECCIONAR RANGO DE MISIÓN</h3>
+                <button id="closeModal" class="close-button">✕</button>
             </div>
             <div class="modal-body">
                 <div class="level-options">
@@ -114,15 +115,32 @@
         </div>
     </div>
 
-    <!-- Vault Animation Modal -->
-    <div id="vaultModal" class="modal hidden">
-        <div class="vault-animation">
-            <div class="vault-container">
-                <div class="vault-lock">
-                    <div class="lock-ring"></div>
-                    <div class="lock-handle"></div>
+    <!-- Password Modal for Mission 2 -->
+    <div id="passwordModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔒 PROTOCOLO 2: CÓDIGO DE ACCESO REQUERIDO</h3>
+                <button id="closePasswordModal" class="close-button">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="password-container">
+                    <div class="vault-display" id="vaultDisplay">
+                        <div class="vault-door" id="vaultDoor">
+                            <div class="vault-lock"></div>
+                            <div class="vault-handle"></div>
+                        </div>
+                        <div class="vault-interior hidden" id="vaultInterior">
+                            <div class="vault-glow"></div>
+                            <div class="mission-data">PROTOCOLO 2 DESBLOQUEADO</div>
+                        </div>
+                    </div>
+                    <div class="password-input-section">
+                        <label for="passwordInput" class="password-label">INGRESE CÓDIGO DE ACCESO:</label>
+                        <input type="text" id="passwordInput" class="password-input" placeholder="AURORAxMxIxSxIxOxNx2" autocomplete="off">
+                        <button id="validatePassword" class="action-button">VALIDAR CÓDIGO</button>
+                        <div id="passwordError" class="password-error hidden">❌ CÓDIGO INVÁLIDO - FORMATO REQUERIDO: AURORAxMxIxSxIxOxNx2</div>
+                    </div>
                 </div>
-                <div class="vault-text">DESCIFRANDO CÓDIGO DE ACCESO...</div>
             </div>
         </div>
     </div>
