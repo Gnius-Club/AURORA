@@ -757,6 +757,33 @@ body {
     position: relative;
 }
 
+/* Skip button */
+.skip-button {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: transparent;
+    border: 2px solid #ff0000;
+    color: #ff0000;
+    padding: 8px 16px;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 5px #ff0000;
+    z-index: 3000;
+}
+
+.skip-button:hover {
+    background: rgba(255, 0, 0, 0.2);
+    box-shadow: 0 0 15px #ff0000;
+}
+
+.skip-button.hidden {
+    display: none;
+}
+
 /* Scanlines overlay for CRT effect */
 .scanlines {
     position: fixed;
@@ -1068,11 +1095,15 @@ body {
     transform: translateY(-3px);
 }
 
-.protocol-block.disabled {
-    border-color: #555555;
-    color: #555555;
-    background: rgba(85, 85, 85, 0.05);
-    cursor: not-allowed;
+.protocol-block.locked {
+    border-color: #ffaa00;
+    background: rgba(255, 170, 0, 0.05);
+}
+
+.protocol-block.locked:hover {
+    background: rgba(255, 170, 0, 0.15);
+    box-shadow: 0 0 20px rgba(255, 170, 0, 0.3);
+    transform: translateY(-3px);
 }
 
 .protocol-header {
@@ -1096,11 +1127,6 @@ body {
     animation: critical-pulse 2s infinite alternate;
 }
 
-@keyframes critical-pulse {
-    from { opacity: 1; }
-    to { opacity: 0.7; }
-}
-
 .status-locked {
     color: #ffaa00;
     background: rgba(255, 170, 0, 0.2);
@@ -1109,15 +1135,14 @@ body {
     animation: locked-pulse 3s infinite alternate;
 }
 
+@keyframes critical-pulse {
+    from { opacity: 1; }
+    to { opacity: 0.7; }
+}
+
 @keyframes locked-pulse {
     from { opacity: 1; }
     to { opacity: 0.8; }
-}
-
-.status-disabled {
-    color: #555555;
-    background: rgba(85, 85, 85, 0.2);
-    border: 1px solid #555555;
 }
 
 /* Modal styles */
@@ -1145,7 +1170,6 @@ body {
     max-width: 600px;
     width: 90%;
     box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
-    position: relative;
 }
 
 .modal-header {
@@ -1153,32 +1177,12 @@ body {
     padding: 20px;
     border-bottom: 2px solid #00ffff;
     text-align: center;
-    position: relative;
 }
 
 .modal-header h3 {
     font-size: 24px;
     color: #00ffff;
     text-shadow: 0 0 10px #00ffff;
-}
-
-.close-button {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    background: transparent;
-    border: none;
-    color: #00ffff;
-    font-size: 24px;
-    cursor: pointer;
-    padding: 5px;
-    transition: all 0.3s ease;
-}
-
-.close-button:hover {
-    color: #ff0000;
-    text-shadow: 0 0 10px #ff0000;
-    transform: scale(1.2);
 }
 
 .modal-body {
@@ -1221,177 +1225,83 @@ body {
     opacity: 0.8;
 }
 
-/* Vault and Password Modal Styles */
-.password-container {
-    display: grid;
-    gap: 30px;
-    text-align: center;
-}
-
-.vault-display {
-    width: 200px;
-    height: 200px;
-    margin: 0 auto;
-    position: relative;
-    perspective: 1000px;
-}
-
-.vault-door {
-    width: 200px;
-    height: 200px;
-    background: linear-gradient(45deg, #333, #666);
-    border: 4px solid #00ffff;
-    border-radius: 20px;
-    position: relative;
-    transform-style: preserve-3d;
-    transition: transform 2s ease;
-    box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
-}
-
-.vault-door.opening {
-    transform: rotateY(-120deg);
-}
-
-.vault-lock {
-    width: 40px;
-    height: 40px;
-    background: radial-gradient(circle, #ffaa00, #cc8800);
-    border-radius: 50%;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 0 15px #ffaa00;
-    transition: all 2s ease;
-}
-
-.vault-door.opening .vault-lock {
-    background: radial-gradient(circle, #00ff00, #008800);
-    box-shadow: 0 0 15px #00ff00;
-}
-
-.vault-handle {
-    width: 20px;
-    height: 60px;
-    background: #888;
-    border-radius: 10px;
-    position: absolute;
-    top: 50%;
-    right: 20px;
-    transform: translateY(-50%);
-    transition: all 2s ease;
-}
-
-.vault-door.opening .vault-handle {
-    transform: translateY(-50%) rotate(90deg);
-}
-
-.vault-interior {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 200px;
-    height: 200px;
-    background: radial-gradient(circle, #00ff00, #004400);
-    border-radius: 20px;
+/* Vault animation styles */
+.vault-animation {
     display: flex;
     align-items: center;
     justify-content: center;
-    transform: translateZ(-20px);
-    opacity: 0;
-    transition: opacity 1s ease 1s;
-}
-
-.vault-interior.visible {
-    opacity: 1;
-}
-
-.vault-glow {
-    position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle, rgba(0, 255, 0, 0.3), transparent);
-    border-radius: 20px;
-    animation: vault-glow 2s ease-in-out infinite alternate;
+    background: rgba(0, 0, 0, 0.9);
 }
 
-@keyframes vault-glow {
-    from { opacity: 0.3; }
-    to { opacity: 0.8; }
-}
-
-.mission-data {
-    font-size: 16px;
-    color: #00ffff;
-    text-shadow: 0 0 10px #00ffff;
-    z-index: 1;
-    padding: 10px;
+.vault-container {
     text-align: center;
 }
 
-.password-input-section {
-    display: grid;
-    gap: 15px;
-}
-
-.password-label {
-    font-size: 18px;
-    color: #00ffff;
-    text-shadow: 0 0 5px #00ffff;
-}
-
-.password-input {
-    background: rgba(0, 255, 255, 0.1);
-    border: 2px solid #00ffff;
-    border-radius: 5px;
-    padding: 12px 15px;
-    font-family: 'VT323', monospace;
-    font-size: 18px;
-    color: #00ffff;
-    text-align: center;
-    letter-spacing: 2px;
-    transition: all 0.3s ease;
-}
-
-.password-input:focus {
-    outline: none;
-    border-color: #00ff00;
-    box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+.vault-lock {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 30px;
+    border: 4px solid #00ff00;
+    border-radius: 50%;
     background: rgba(0, 255, 0, 0.1);
+    box-shadow: 0 0 30px #00ff00;
+    animation: vault-unlock 2s ease-in-out;
 }
 
-.password-input::placeholder {
-    color: rgba(0, 255, 255, 0.5);
-    font-style: italic;
+.lock-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 80px;
+    height: 80px;
+    border: 3px solid #00ff00;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: ring-rotate 2s ease-in-out;
 }
 
-.password-error {
-    color: #ff0000;
-    font-size: 16px;
-    text-shadow: 0 0 10px #ff0000;
-    background: rgba(255, 0, 0, 0.1);
-    border: 1px solid #ff0000;
-    border-radius: 5px;
-    padding: 10px;
-    animation: error-shake 0.5s ease;
+.lock-handle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 40px;
+    background: #00ff00;
+    border-radius: 10px;
+    transform: translate(-50%, -70%);
+    animation: handle-turn 2s ease-in-out;
 }
 
-@keyframes error-shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
+.vault-text {
+    font-size: 24px;
+    color: #00ff00;
+    text-shadow: 0 0 10px #00ff00;
+    animation: text-fade 2s ease-in-out;
 }
 
-/* Vault opening animation */
-@keyframes vault-opening {
-    0% {
-        transform: rotateY(0deg);
-    }
-    100% {
-        transform: rotateY(-120deg);
-    }
+@keyframes vault-unlock {
+    0% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.1) rotate(180deg); }
+    100% { transform: scale(1) rotate(360deg); }
+}
+
+@keyframes ring-rotate {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(720deg); }
+}
+
+@keyframes handle-turn {
+    0% { transform: translate(-50%, -70%) rotate(0deg); }
+    50% { transform: translate(-50%, -70%) rotate(90deg); }
+    100% { transform: translate(-50%, -70%) rotate(180deg); }
+}
+
+@keyframes text-fade {
+    0%, 70% { opacity: 1; }
+    100% { opacity: 0; }
 }
 
 /* Responsive design */
@@ -1419,55 +1329,12 @@ body {
     
     .modal-content {
         margin: 20px;
-        max-width: 90vw;
     }
     
-    .password-input {
-        font-size: 16px;
-    }
-    
-    .vault-display {
-        width: 150px;
-        height: 150px;
-    }
-    
-    .vault-door {
-        width: 150px;
-        height: 150px;
-    }
-    
-    .vault-interior {
-        width: 150px;
-        height: 150px;
-    }
-}
-
-@media (max-width: 480px) {
-    .modal-content {
-        margin: 10px;
-        max-width: 95vw;
-    }
-    
-    .modal-body {
-        padding: 20px;
-    }
-    
-    .password-container {
-        gap: 20px;
-    }
-    
-    .vault-display {
-        width: 120px;
-        height: 120px;
-    }
-    
-    .vault-door {
-        width: 120px;
-        height: 120px;
-    }
-    
-    .vault-interior {
-        width: 120px;
-        height: 120px;
+    .skip-button {
+        top: 10px;
+        right: 10px;
+        padding: 6px 12px;
+        font-size: 14px;
     }
 }
