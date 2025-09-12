@@ -30,16 +30,13 @@ const appData = {
         crisisPhaseDelay: 6000,
         alarmDuration: 2500,
         vaultAnimationDuration: 2000
-    },
-    passwordValidation: {
-        regex: /^AURORA.M.I.S.I.O.N.2$/
     }
 };
 
 let currentPhase = 'boot';
-let selectedMission = null;
+let currentMission = 1;
 
-// Enhanced audio simulator
+// Simple audio simulator
 class AudioSimulator {
     constructor() {
         this.audioContext = null;
@@ -51,13 +48,12 @@ class AudioSimulator {
         try {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             this.enabled = true;
-            console.log('Audio initialized successfully');
         } catch (e) {
             console.log('Audio not available');
         }
     }
 
-    playSound(freq, duration, type = 'sine', volume = 0.1) {
+    playSound(freq, duration, type = 'sine') {
         if (!this.enabled) return;
         try {
             const osc = this.audioContext.createOscillator();
@@ -66,7 +62,7 @@ class AudioSimulator {
             gain.connect(this.audioContext.destination);
             osc.frequency.value = freq;
             osc.type = type;
-            gain.gain.setValueAtTime(volume, this.audioContext.currentTime);
+            gain.gain.setValueAtTime(0.1, this.audioContext.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
             osc.start();
             osc.stop(this.audioContext.currentTime + duration);
@@ -76,39 +72,23 @@ class AudioSimulator {
     }
 
     playTyping() {
-        this.playSound(800 + Math.random() * 200, 0.1, 'square', 0.05);
+        this.playSound(800 + Math.random() * 200, 0.1, 'square');
     }
 
     playAlarm() {
-        this.playSound(440, 2.5, 'sawtooth', 0.15);
+        this.playSound(440, 2.5, 'sawtooth');
     }
 
-    playUIHover() {
-        this.playSound(1000, 0.15, 'sine', 0.08);
+    playUI() {
+        this.playSound(1200, 0.2, 'sine');
     }
 
-    playUIClick() {
-        this.playSound(1200, 0.2, 'sine', 0.1);
-    }
-
-    playUnlock() {
-        // Success chord
-        this.playSound(440, 0.5, 'sine', 0.1);
-        setTimeout(() => this.playSound(554, 0.5, 'sine', 0.1), 100);
-        setTimeout(() => this.playSound(659, 0.8, 'sine', 0.15), 200);
+    playSuccess() {
+        this.playSound(1600, 0.5, 'sine');
     }
 
     playError() {
-        // Error buzz
-        this.playSound(200, 0.3, 'sawtooth', 0.12);
-        setTimeout(() => this.playSound(180, 0.3, 'sawtooth', 0.12), 100);
-    }
-
-    playVaultOpen() {
-        // Mechanical opening sound
-        this.playSound(300, 1.5, 'square', 0.08);
-        setTimeout(() => this.playSound(350, 1.2, 'triangle', 0.06), 200);
-        setTimeout(() => this.playSound(400, 1.0, 'sine', 0.1), 800);
+        this.playSound(200, 0.8, 'sawtooth');
     }
 }
 
@@ -126,6 +106,20 @@ function showPhase(phaseId) {
     if (phase) {
         phase.classList.remove('hidden');
         currentPhase = phaseId;
+        
+        // Update skip button visibility
+        updateSkipButton();
+    }
+}
+
+function updateSkipButton() {
+    const skipButton = document.getElementById('skipButton');
+    if (!skipButton) return;
+    
+    if (currentPhase === 'missionHub') {
+        skipButton.classList.add('hidden');
+    } else {
+        skipButton.classList.remove('hidden');
     }
 }
 
@@ -141,47 +135,193 @@ async function typeText(elementId, text, speed = appData.timing.typewriterSpeed)
     }
 }
 
-// Mobile detection
-function isMobileDevice() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
-}
-
-// Password validation
+// Mission 2 password validation
 function validateMission2Password(password) {
-    return appData.passwordValidation.regex.test(password);
+    // Regex pattern: AURORA + cualquier_char + M + cualquier_char + I + cualquier_char + S + cualquier_char + I + cualquier_char + O + cualquier_char + N + cualquier_char + 2
+    const regex = /^AURORA.M.I.S.I.O.N.2$/;
+    return regex.test(password);
 }
 
-// Vault animation
-function openVaultAnimation() {
-    const vaultDoor = document.getElementById('vaultDoor');
-    const vaultInterior = document.getElementById('vaultInterior');
+// DIRECT MISSION HUB FUNCTION - No more phase complications
+function startMissionHub() {
+    console.log('=== JUMPING DIRECTLY TO MISSION HUB ===');
+    currentPhase = 'missionHub';
     
-    if (vaultDoor && vaultInterior) {
-        // Play vault opening sound
-        audio.playVaultOpen();
-        
-        // Start door opening animation
-        vaultDoor.classList.add('opening');
-        
-        // Show interior after delay
-        setTimeout(() => {
-            vaultInterior.classList.remove('hidden');
-            vaultInterior.classList.add('visible');
-        }, 1000);
-        
-        return appData.timing.vaultAnimationDuration;
+    // Hide all phases
+    document.querySelectorAll('.phase').forEach(p => p.classList.add('hidden'));
+    
+    // Show mission hub
+    const missionHub = document.getElementById('missionHub');
+    if (missionHub) {
+        missionHub.classList.remove('hidden');
     }
-    return 0;
+    
+    // Hide skip button
+    const skipButton = document.getElementById('skipButton');
+    if (skipButton) {
+        skipButton.classList.add('hidden');
+    }
+    
+    // Setup protocols immediately
+    setTimeout(() => {
+        setupProtocolButtons();
+    }, 100);
 }
 
-// Global function to handle ready button click
-window.proceedToMissionHub = function() {
-    console.log('proceedToMissionHub called - starting mission hub');
-    audio.playUIClick();
-    startMissionHub();
-};
+function setupProtocolButtons() {
+    console.log('Setting up protocol buttons...');
+    
+    // Protocol 1 - Mission 1
+    const protocol1 = document.getElementById('protocol1');
+    if (protocol1) {
+        // Remove all existing event listeners by replacing the element
+        const newProtocol1 = protocol1.cloneNode(true);
+        protocol1.parentNode.replaceChild(newProtocol1, protocol1);
+        
+        // Add click handler
+        newProtocol1.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            console.log('✓ Protocol 1 clicked - opening Mission 1 selection');
+            audio.playUI();
+            currentMission = 1;
+            showMissionModal(1);
+        });
+        
+        // Also add touch handler for mobile
+        newProtocol1.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            console.log('✓ Protocol 1 touched - opening Mission 1 selection');
+            audio.playUI();
+            currentMission = 1;
+            showMissionModal(1);
+        });
+        
+        console.log('✓ Protocol 1 is now active and clickable');
+    }
+    
+    // Protocol 2 - Mission 2 (FIXED: Now clickable and functional)
+    const protocol2 = document.getElementById('protocol2');
+    if (protocol2) {
+        // Remove all existing event listeners by replacing the element
+        const newProtocol2 = protocol2.cloneNode(true);
+        protocol2.parentNode.replaceChild(newProtocol2, protocol2);
+        
+        // Add click handler
+        newProtocol2.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            console.log('✓ Protocol 2 clicked - requesting password');
+            audio.playUI();
+            unlockMission2();
+        });
+        
+        // Also add touch handler for mobile
+        newProtocol2.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            console.log('✓ Protocol 2 touched - requesting password');
+            audio.playUI();
+            unlockMission2();
+        });
+        
+        console.log('✓ Protocol 2 is now active and clickable');
+    }
+}
 
-// Phase functions (keeping existing ones intact)
+function unlockMission2() {
+    console.log('Unlocking Mission 2...');
+    
+    // Use prompt for password input
+    const password = prompt('INGRESE CÓDIGO DE ACCESO PARA PROTOCOLO 2:\n\nFormato: AURORAxMxIxSxIxOxNx2\n(donde x = cualquier carácter)');
+    
+    if (password === null) {
+        // User cancelled
+        console.log('Password entry cancelled');
+        return;
+    }
+    
+    if (validateMission2Password(password)) {
+        console.log('✓ Password valid! Unlocking Mission 2...');
+        audio.playSuccess();
+        openVaultAnimation();
+    } else {
+        console.log('✗ Invalid password');
+        audio.playError();
+        alert('CÓDIGO DE ACCESO INVÁLIDO\n\nFormato requerido: AURORAxMxIxSxIxOxNx2\ndonde x = cualquier carácter\n\nEjemplos válidos:\n• AURORAyMfIVSrI-O5Nd2\n• AURORAFMgI#S3I5O8Nb2\n• AURORAvMeIaSxIx2O2Nx/2');
+    }
+}
+
+function openVaultAnimation() {
+    console.log('Opening vault animation...');
+    const vaultModal = document.getElementById('vaultModal');
+    if (vaultModal) {
+        vaultModal.classList.remove('hidden');
+        
+        setTimeout(() => {
+            vaultModal.classList.add('hidden');
+            currentMission = 2;
+            showMissionModal(2);
+        }, appData.timing.vaultAnimationDuration);
+    }
+}
+
+function showMissionModal(missionNumber) {
+    console.log(`✓ Modal: Showing level selection for Mission ${missionNumber}`);
+    const modal = document.getElementById('levelModal');
+    const modalTitle = document.getElementById('modalTitle');
+    
+    if (modal && modalTitle) {
+        // Update modal title
+        modalTitle.textContent = `SELECCIONAR RANGO DE MISIÓN - PROTOCOLO ${missionNumber}`;
+        
+        modal.classList.remove('hidden');
+        
+        // Setup level buttons with correct URLs
+        const buttons = document.querySelectorAll('.level-button');
+        const missionData = missionNumber === 1 ? appData.missions.mission1 : appData.missions.mission2;
+        
+        buttons.forEach((button) => {
+            const level = button.getAttribute('data-level');
+            const url = missionData[level];
+            
+            // Create new button to ensure clean event handlers
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+            
+            newButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                console.log(`✓ Level button clicked! Mission ${missionNumber}, Level: ${level}`);
+                audio.playUI();
+                redirectToMission(url, missionNumber, level);
+            });
+        });
+        
+        // Modal close handler - click outside to close
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+            }
+        });
+    }
+}
+
+function redirectToMission(url, missionNumber, level) {
+    console.log(`✓ Redirecting to Mission ${missionNumber}, Level: ${level}, URL: ${url}`);
+    
+    // Open in new tab
+    window.open(url, '_blank');
+    
+    // Close modal
+    const modal = document.getElementById('levelModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+// Phase functions (kept for story mode, but simplified)
 async function startBootSequence() {
     console.log('Phase 1: Boot sequence starting');
     showPhase('bootSequence');
@@ -256,291 +396,49 @@ async function startBriefing() {
     if (button) {
         button.classList.remove('hidden');
         
-        // Use both onclick and addEventListener for maximum compatibility
-        button.onclick = function(e) {
-            console.log('Ready button onclick fired');
-            if (e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            window.proceedToMissionHub();
-            return false;
-        };
+        // Create completely new button
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
         
-        button.addEventListener('click', function(e) {
-            console.log('Ready button addEventListener fired');
-            e.preventDefault();
-            e.stopPropagation();
-            window.proceedToMissionHub();
-        });
+        // Add multiple event types for maximum compatibility
+        newButton.addEventListener('click', handleReadyClick);
+        newButton.addEventListener('touchend', handleReadyClick);
+        newButton.addEventListener('mouseup', handleReadyClick);
         
-        // Make sure button is focusable and clickable
-        button.setAttribute('tabindex', '0');
-        button.style.pointerEvents = 'auto';
-        button.style.cursor = 'pointer';
-        
-        console.log('Ready button is now active and clickable');
+        console.log('✓ Ready button is now active and clickable');
     }
 }
 
-function startMissionHub() {
-    console.log('Phase 4: Mission hub starting');
-    showPhase('missionHub');
-    
-    // Setup Protocol 1 (Mission 1)
-    const protocol1 = document.getElementById('protocol1');
-    if (protocol1) {
-        protocol1.addEventListener('mouseenter', () => audio.playUIHover());
-        protocol1.onclick = function(e) {
-            console.log('Protocol 1 clicked!');
-            if (e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            audio.playUIClick();
-            selectedMission = 1;
-            showMissionModal();
-            return false;
-        };
-    }
-    
-    // Setup Protocol 2 (Mission 2 - requires password)
-    const protocol2 = document.getElementById('protocol2');
-    if (protocol2) {
-        protocol2.addEventListener('mouseenter', () => audio.playUIHover());
-        protocol2.onclick = function(e) {
-            console.log('Protocol 2 clicked!');
-            if (e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            audio.playUIClick();
-            selectedMission = 2;
-            showPasswordModal();
-            return false;
-        };
-    }
-    
-    console.log('Mission hub is now active');
+function handleReadyClick(e) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    console.log('✓ Ready button activated - advancing to mission hub');
+    audio.playUI();
+    startMissionHub();
 }
 
-function showMissionModal() {
-    console.log('Modal: Showing level selection for mission', selectedMission);
-    const modal = document.getElementById('levelModal');
-    if (modal) {
-        modal.classList.remove('hidden');
+// Skip intro functionality - GUARANTEED TO WORK
+function setupSkipButton() {
+    const skipButton = document.getElementById('skipButton');
+    if (skipButton) {
+        // Multiple event types for compatibility
+        skipButton.addEventListener('click', handleSkipClick);
+        skipButton.addEventListener('touchend', handleSkipClick);
+        skipButton.addEventListener('mouseup', handleSkipClick);
         
-        // Setup level buttons
-        const buttons = document.querySelectorAll('.level-button');
-        buttons.forEach(button => {
-            const level = button.getAttribute('data-level');
-            
-            button.addEventListener('mouseenter', () => audio.playUIHover());
-            button.onclick = function(e) {
-                console.log('Level button clicked!', level);
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                audio.playUIClick();
-                redirectToMission(selectedMission, level);
-                return false;
-            };
-        });
-        
-        // Setup close button
-        const closeButton = document.getElementById('closeModal');
-        if (closeButton) {
-            closeButton.onclick = function(e) {
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                audio.playUIClick();
-                modal.classList.add('hidden');
-                return false;
-            };
-        }
-        
-        // Modal background close
-        modal.onclick = function(e) {
-            if (e.target === modal) {
-                audio.playUIClick();
-                modal.classList.add('hidden');
-            }
-        };
+        console.log('✓ Skip button is now active');
     }
 }
 
-function showPasswordModal() {
-    console.log('Modal: Showing password input for Mission 2');
-    const modal = document.getElementById('passwordModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        
-        // Reset vault state
-        const vaultDoor = document.getElementById('vaultDoor');
-        const vaultInterior = document.getElementById('vaultInterior');
-        const passwordError = document.getElementById('passwordError');
-        const passwordInput = document.getElementById('passwordInput');
-        
-        if (vaultDoor) vaultDoor.classList.remove('opening');
-        if (vaultInterior) {
-            vaultInterior.classList.add('hidden');
-            vaultInterior.classList.remove('visible');
-        }
-        if (passwordError) passwordError.classList.add('hidden');
-        if (passwordInput) {
-            passwordInput.value = '';
-            // Focus with delay to ensure modal is visible
-            setTimeout(() => passwordInput.focus(), 100);
-        }
-        
-        // Setup validation button
-        const validateButton = document.getElementById('validatePassword');
-        if (validateButton) {
-            validateButton.addEventListener('mouseenter', () => audio.playUIHover());
-            validateButton.onclick = function(e) {
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                audio.playUIClick();
-                validatePassword();
-                return false;
-            };
-        }
-        
-        // Setup password input
-        if (passwordInput) {
-            passwordInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    validatePassword();
-                }
-            });
-            
-            // Mobile compatibility - ensure keyboard appears
-            if (isMobileDevice()) {
-                passwordInput.setAttribute('inputmode', 'text');
-                passwordInput.setAttribute('autocomplete', 'off');
-                passwordInput.setAttribute('autocorrect', 'off');
-                passwordInput.setAttribute('spellcheck', 'false');
-            }
-        }
-        
-        // Setup close button
-        const closeButton = document.getElementById('closePasswordModal');
-        if (closeButton) {
-            closeButton.onclick = function(e) {
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                audio.playUIClick();
-                modal.classList.add('hidden');
-                return false;
-            };
-        }
-        
-        // Modal background close
-        modal.onclick = function(e) {
-            if (e.target === modal) {
-                audio.playUIClick();
-                modal.classList.add('hidden');
-            }
-        };
-    }
+function handleSkipClick(e) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    console.log('✓ Skip button clicked - jumping directly to mission hub');
+    audio.playUI();
+    startMissionHub();
 }
 
-async function validatePassword() {
-    const passwordInput = document.getElementById('passwordInput');
-    const passwordError = document.getElementById('passwordError');
-    const validateButton = document.getElementById('validatePassword');
-    
-    if (!passwordInput || !passwordError || !validateButton) return;
-    
-    const password = passwordInput.value.trim();
-    
-    if (!password) {
-        showPasswordError('Por favor ingrese un código de acceso');
-        return;
-    }
-    
-    // Disable button during validation
-    validateButton.disabled = true;
-    validateButton.textContent = 'VALIDANDO...';
-    
-    await sleep(800); // Dramatic pause
-    
-    if (validateMission2Password(password)) {
-        console.log('Password valid! Opening vault...');
-        passwordError.classList.add('hidden');
-        audio.playUnlock();
-        
-        // Start vault opening animation
-        const animationDuration = openVaultAnimation();
-        
-        await sleep(animationDuration);
-        
-        // Hide password modal and show mission selection
-        document.getElementById('passwordModal').classList.add('hidden');
-        showMissionModal();
-        
-    } else {
-        console.log('Password invalid');
-        showPasswordError('❌ CÓDIGO INVÁLIDO - FORMATO REQUERIDO: AURORAxMxIxSxIxOxNx2');
-        audio.playError();
-    }
-    
-    // Re-enable button
-    validateButton.disabled = false;
-    validateButton.textContent = 'VALIDAR CÓDIGO';
-}
-
-function showPasswordError(message) {
-    const passwordError = document.getElementById('passwordError');
-    if (passwordError) {
-        passwordError.textContent = message;
-        passwordError.classList.remove('hidden');
-        
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-            passwordError.classList.add('hidden');
-        }, 5000);
-    }
-}
-
-function redirectToMission(missionNumber, level) {
-    const missionKey = `mission${missionNumber}`;
-    const url = appData.missions[missionKey][level];
-    
-    if (url) {
-        console.log(`Redirecting to: ${url}`);
-        
-        // Show success message
-        const missionName = missionNumber === 1 ? 'PROTOCOLO 1' : 'PROTOCOLO 2';
-        const levelNames = {
-            primaria_baja: 'CADETE JUNIOR',
-            primaria_alta: 'CADETE',
-            secundaria: 'ESPECIALISTA',
-            preparatoria: 'INGENIERO/A DE CAMPO'
-        };
-        
-        alert(`¡MISIÓN ASIGNADA!\n\n${missionName} - ${levelNames[level]}\n\nSerás redirigido/a a la plataforma de misión externa.\n\n¡Buena suerte, cadete!`);
-        
-        // Open in new tab
-        window.open(url, '_blank');
-        
-        // Hide modal
-        document.getElementById('levelModal').classList.add('hidden');
-    } else {
-        console.error('URL not found for mission', missionNumber, 'level', level);
-        alert('Error: Misión no disponible');
-    }
-}
-
-// Atmospheric effects (keeping existing ones)
+// Atmospheric effects
 function addEffects() {
     // Scanlines flicker
     setInterval(() => {
@@ -564,12 +462,13 @@ function addEffects() {
 
 // Initialize everything
 function init() {
-    console.log('=== AURORA TERMINAL INITIALIZING ===');
-    console.log('Mission URLs loaded:', appData.missions);
+    console.log('=== AURORA TERMINAL v3 INITIALIZING ===');
     
     // Enable audio on first interaction
     document.addEventListener('click', () => audio.initialize(), { once: true });
-    document.addEventListener('touchstart', () => audio.initialize(), { once: true });
+    
+    // Setup skip button FIRST
+    setupSkipButton();
     
     // Start atmospheric effects
     setTimeout(addEffects, 1000);
@@ -578,7 +477,7 @@ function init() {
     setTimeout(startBootSequence, 300);
 }
 
-// Debug shortcuts (keeping existing ones)
+// Debug shortcuts
 document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.shiftKey) {
         switch(e.key) {
@@ -586,9 +485,30 @@ document.addEventListener('keydown', (e) => {
             case '2': startSystemPhase(); break;
             case '3': startBriefing(); break;
             case '4': startMissionHub(); break;
-            case 'M': showMissionModal(); break;
-            case 'P': showPasswordModal(); break;
+            case 'M': showMissionModal(1); break;
+            case 'N': showMissionModal(2); break;
+            case 'T': 
+                // Test Mission 2 password validation
+                const testPasswords = [
+                    "AURORAyMfIVSrI-O5Nd2",
+                    "AURORAFMgI#S3I5O8Nb2", 
+                    "AURORAvMeIaSxIx2O2Nx/2",
+                    "AURORAxMtIRSxI2O7Nx&2",
+                    "INVALID"
+                ];
+                testPasswords.forEach(pwd => {
+                    console.log(`Password "${pwd}": ${validateMission2Password(pwd) ? 'VALID' : 'INVALID'}`);
+                });
+                break;
         }
+    }
+});
+
+// Emergency skip - press H to go directly to hub
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'h' || e.key === 'H') {
+        console.log('Emergency hub shortcut activated');
+        startMissionHub();
     }
 });
 
@@ -597,16 +517,13 @@ document.addEventListener('DOMContentLoaded', init);
 
 // Export for debugging
 window.auroraDebug = {
-    showPhase,
-    startBootSequence,
-    startBriefing,
     startMissionHub,
     showMissionModal,
-    showPasswordModal,
     validateMission2Password,
-    openVaultAnimation,
+    unlockMission2,
+    setupProtocolButtons,
     currentPhase,
-    selectedMission,
+    currentMission,
     audio,
     appData
 };
