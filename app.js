@@ -30,13 +30,18 @@ const appData = {
         crisisPhaseDelay: 6000,
         alarmDuration: 2500,
         vaultAnimationDuration: 2000
+    },
+    passwordValidation: {
+        regex: /^AURORA.M.I.S.I.O.N.2$/
     }
 };
 
 let currentPhase = 'boot';
-let currentMission = 1;
+let selectedMission = null;
+let isTyping = false; // Track typing state
+let skipRequested = false; // Track if skip was requested
 
-// Simple audio simulator
+// Enhanced audio simulator
 class AudioSimulator {
     constructor() {
         this.audioContext = null;
@@ -48,13 +53,14 @@ class AudioSimulator {
         try {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             this.enabled = true;
+            console.log('Audio initialized successfully');
         } catch (e) {
             console.log('Audio not available');
         }
     }
 
-    playSound(freq, duration, type = 'sine') {
-        if (!this.enabled) return;
+    playSound(freq, duration, type = 'sine', volume = 0.1) {
+        if (!this.enabled || skipRequested) return;
         try {
             const osc = this.audioContext.createOscillator();
             const gain = this.audioContext.createGain();
@@ -62,7 +68,7 @@ class AudioSimulator {
             gain.connect(this.audioContext.destination);
             osc.frequency.value = freq;
             osc.type = type;
-            gain.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+            gain.gain.setValueAtTime(volume, this.audioContext.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
             osc.start();
             osc.stop(this.audioContext.currentTime + duration);
@@ -72,23 +78,39 @@ class AudioSimulator {
     }
 
     playTyping() {
-        this.playSound(800 + Math.random() * 200, 0.1, 'square');
+        this.playSound(800 + Math.random() * 200, 0.1, 'square', 0.05);
     }
 
     playAlarm() {
-        this.playSound(440, 2.5, 'sawtooth');
+        this.playSound(440, 2.5, 'sawtooth', 0.15);
     }
 
-    playUI() {
-        this.playSound(1200, 0.2, 'sine');
+    playUIHover() {
+        this.playSound(1000, 0.15, 'sine', 0.08);
     }
 
-    playSuccess() {
-        this.playSound(1600, 0.5, 'sine');
+    playUIClick() {
+        this.playSound(1200, 0.2, 'sine', 0.1);
+    }
+
+    playUnlock() {
+        // Success chord
+        this.playSound(440, 0.5, 'sine', 0.1);
+        setTimeout(() => this.playSound(554, 0.5, 'sine', 0.1), 100);
+        setTimeout(() => this.playSound(659, 0.8, 'sine', 0.15), 200);
     }
 
     playError() {
-        this.playSound(200, 0.8, 'sawtooth');
+        // Error buzz
+        this.playSound(200, 0.3, 'sawtooth', 0.12);
+        setTimeout(() => this.playSound(180, 0.3, 'sawtooth', 0.12), 100);
+    }
+
+    playVaultOpen() {
+        // Mechanical opening sound
+        this.playSound(300, 1.5, 'square', 0.08);
+        setTimeout(() => this.playSound(350, 1.2, 'triangle', 0.06), 200);
+        setTimeout(() => this.playSound(400, 1.0, 'sine', 0.1), 800);
     }
 }
 
@@ -96,7 +118,17 @@ const audio = new AudioSimulator();
 
 // Utility functions
 function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise(resolve => {
+        const timeout = setTimeout(() => {
+            if (!skipRequested) resolve();
+        }, ms);
+        
+        // If skip is requested, resolve immediately
+        if (skipRequested) {
+            clearTimeout(timeout);
+            resolve();
+        }
+    });
 }
 
 function showPhase(phaseId) {
@@ -107,263 +139,153 @@ function showPhase(phaseId) {
         phase.classList.remove('hidden');
         currentPhase = phaseId;
         
-        // Update skip button visibility
-        updateSkipButton();
-    }
-}
-
-function updateSkipButton() {
-    const skipButton = document.getElementById('skipButton');
-    if (!skipButton) return;
-    
-    if (currentPhase === 'missionHub') {
-        skipButton.classList.add('hidden');
-    } else {
-        skipButton.classList.remove('hidden');
+        // Show/hide skip button based on phase
+        const skipButton = document.getElementById('skipIntroButton');
+        if (skipButton) {
+            if (phaseId === 'missionHub') {
+                skipButton.classList.add('hidden');
+            } else {
+                skipButton.classList.remove('hidden');
+            }
+        }
     }
 }
 
 async function typeText(elementId, text, speed = appData.timing.typewriterSpeed) {
     const element = document.getElementById(elementId);
-    if (!element) return;
+    if (!element || skipRequested) return;
     
+    isTyping = true;
     element.textContent = '';
-    for (let i = 0; i < text.length; i++) {
+    
+    for (let i = 0; i < text.length && !skipRequested; i++) {
         element.textContent += text[i];
         audio.playTyping();
         await sleep(speed);
     }
+    
+    // Complete the text immediately if skip was requested
+    if (skipRequested) {
+        element.textContent = text;
+    }
+    
+    isTyping = false;
 }
 
-// Mission 2 password validation
+// Mobile detection
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+}
+
+// Password validation
 function validateMission2Password(password) {
-    // Regex pattern: AURORA + cualquier_char + M + cualquier_char + I + cualquier_char + S + cualquier_char + I + cualquier_char + O + cualquier_char + N + cualquier_char + 2
-    const regex = /^AURORA.M.I.S.I.O.N.2$/;
-    return regex.test(password);
+    return appData.passwordValidation.regex.test(password);
 }
 
-// DIRECT MISSION HUB FUNCTION - No more phase complications
-function startMissionHub() {
-    console.log('=== JUMPING DIRECTLY TO MISSION HUB ===');
-    currentPhase = 'missionHub';
+// FIXED: Skip intro function - goes DIRECTLY to mission hub
+function skipIntro() {
+    console.log('=== SKIP INTRO ACTIVATED ===');
+    audio.playUIClick();
     
-    // Hide all phases
-    document.querySelectorAll('.phase').forEach(p => p.classList.add('hidden'));
+    // Set skip flag to stop all ongoing processes
+    skipRequested = true;
+    isTyping = false;
     
-    // Show mission hub
-    const missionHub = document.getElementById('missionHub');
-    if (missionHub) {
-        missionHub.classList.remove('hidden');
+    // Stop all timeouts globally
+    const highestTimeoutId = setTimeout(() => {}, 0);
+    for (let i = 0; i <= highestTimeoutId; i++) {
+        clearTimeout(i);
     }
     
-    // Hide skip button
-    const skipButton = document.getElementById('skipButton');
-    if (skipButton) {
-        skipButton.classList.add('hidden');
+    // Stop all intervals
+    const highestIntervalId = setInterval(() => {}, 9999);
+    for (let i = 0; i <= highestIntervalId; i++) {
+        clearInterval(i);
     }
     
-    // Setup protocols immediately
+    // Go DIRECTLY to mission hub - no other phases
     setTimeout(() => {
-        setupProtocolButtons();
+        showMissionHub();
     }, 100);
 }
 
-function setupProtocolButtons() {
-    console.log('Setting up protocol buttons...');
-    
-    // Protocol 1 - Mission 1
-    const protocol1 = document.getElementById('protocol1');
-    if (protocol1) {
-        // Remove all existing event listeners by replacing the element
-        const newProtocol1 = protocol1.cloneNode(true);
-        protocol1.parentNode.replaceChild(newProtocol1, protocol1);
-        
-        // Add click handler
-        newProtocol1.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            console.log('✓ Protocol 1 clicked - opening Mission 1 selection');
-            audio.playUI();
-            currentMission = 1;
-            showMissionModal(1);
-        });
-        
-        // Also add touch handler for mobile
-        newProtocol1.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            console.log('✓ Protocol 1 touched - opening Mission 1 selection');
-            audio.playUI();
-            currentMission = 1;
-            showMissionModal(1);
-        });
-        
-        console.log('✓ Protocol 1 is now active and clickable');
-    }
-    
-    // Protocol 2 - Mission 2 (FIXED: Now clickable and functional)
-    const protocol2 = document.getElementById('protocol2');
-    if (protocol2) {
-        // Remove all existing event listeners by replacing the element
-        const newProtocol2 = protocol2.cloneNode(true);
-        protocol2.parentNode.replaceChild(newProtocol2, protocol2);
-        
-        // Add click handler
-        newProtocol2.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            console.log('✓ Protocol 2 clicked - requesting password');
-            audio.playUI();
-            unlockMission2();
-        });
-        
-        // Also add touch handler for mobile
-        newProtocol2.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            console.log('✓ Protocol 2 touched - requesting password');
-            audio.playUI();
-            unlockMission2();
-        });
-        
-        console.log('✓ Protocol 2 is now active and clickable');
-    }
-}
-
-function unlockMission2() {
-    console.log('Unlocking Mission 2...');
-    
-    // Use prompt for password input
-    const password = prompt('INGRESE CÓDIGO DE ACCESO PARA PROTOCOLO 2:\n\nFormato: AURORAxMxIxSxIxOxNx2\n(donde x = cualquier carácter)');
-    
-    if (password === null) {
-        // User cancelled
-        console.log('Password entry cancelled');
-        return;
-    }
-    
-    if (validateMission2Password(password)) {
-        console.log('✓ Password valid! Unlocking Mission 2...');
-        audio.playSuccess();
-        openVaultAnimation();
-    } else {
-        console.log('✗ Invalid password');
-        audio.playError();
-        alert('CÓDIGO DE ACCESO INVÁLIDO\n\nFormato requerido: AURORAxMxIxSxIxOxNx2\ndonde x = cualquier carácter\n\nEjemplos válidos:\n• AURORAyMfIVSrI-O5Nd2\n• AURORAFMgI#S3I5O8Nb2\n• AURORAvMeIaSxIx2O2Nx/2');
-    }
-}
-
+// Vault animation
 function openVaultAnimation() {
-    console.log('Opening vault animation...');
-    const vaultModal = document.getElementById('vaultModal');
-    if (vaultModal) {
-        vaultModal.classList.remove('hidden');
+    const vaultDoor = document.getElementById('vaultDoor');
+    const vaultInterior = document.getElementById('vaultInterior');
+    
+    if (vaultDoor && vaultInterior) {
+        // Play vault opening sound
+        audio.playVaultOpen();
         
+        // Start door opening animation
+        vaultDoor.classList.add('opening');
+        
+        // Show interior after delay
         setTimeout(() => {
-            vaultModal.classList.add('hidden');
-            currentMission = 2;
-            showMissionModal(2);
-        }, appData.timing.vaultAnimationDuration);
+            vaultInterior.classList.remove('hidden');
+            vaultInterior.classList.add('visible');
+        }, 1000);
+        
+        return appData.timing.vaultAnimationDuration;
     }
+    return 0;
 }
 
-function showMissionModal(missionNumber) {
-    console.log(`✓ Modal: Showing level selection for Mission ${missionNumber}`);
-    const modal = document.getElementById('levelModal');
-    const modalTitle = document.getElementById('modalTitle');
-    
-    if (modal && modalTitle) {
-        // Update modal title
-        modalTitle.textContent = `SELECCIONAR RANGO DE MISIÓN - PROTOCOLO ${missionNumber}`;
-        
-        modal.classList.remove('hidden');
-        
-        // Setup level buttons with correct URLs
-        const buttons = document.querySelectorAll('.level-button');
-        const missionData = missionNumber === 1 ? appData.missions.mission1 : appData.missions.mission2;
-        
-        buttons.forEach((button) => {
-            const level = button.getAttribute('data-level');
-            const url = missionData[level];
-            
-            // Create new button to ensure clean event handlers
-            const newButton = button.cloneNode(true);
-            button.parentNode.replaceChild(newButton, button);
-            
-            newButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                console.log(`✓ Level button clicked! Mission ${missionNumber}, Level: ${level}`);
-                audio.playUI();
-                redirectToMission(url, missionNumber, level);
-            });
-        });
-        
-        // Modal close handler - click outside to close
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                modal.classList.add('hidden');
-            }
-        });
-    }
-}
-
-function redirectToMission(url, missionNumber, level) {
-    console.log(`✓ Redirecting to Mission ${missionNumber}, Level: ${level}, URL: ${url}`);
-    
-    // Open in new tab
-    window.open(url, '_blank');
-    
-    // Close modal
-    const modal = document.getElementById('levelModal');
-    if (modal) {
-        modal.classList.add('hidden');
-    }
-}
-
-// Phase functions (kept for story mode, but simplified)
+// Phase functions
 async function startBootSequence() {
+    if (skipRequested) return;
     console.log('Phase 1: Boot sequence starting');
     showPhase('bootSequence');
     
     const bootText = document.getElementById('bootText');
-    if (!bootText) return;
+    if (!bootText || skipRequested) return;
     
     bootText.innerHTML = '';
     
     for (const line of appData.narrative.bootSequence) {
+        if (skipRequested) break;
+        
         const div = document.createElement('div');
         bootText.appendChild(div);
         
-        for (let i = 0; i < line.length; i++) {
+        for (let i = 0; i < line.length && !skipRequested; i++) {
             div.textContent += line[i];
             audio.playTyping();
             await sleep(appData.timing.typewriterSpeed);
         }
         
-        await sleep(appData.timing.bootSequenceDelay);
+        if (!skipRequested) {
+            await sleep(appData.timing.bootSequenceDelay);
+        }
     }
     
-    await sleep(2000);
-    startSystemPhase();
+    if (!skipRequested) {
+        await sleep(2000);
+        startSystemPhase();
+    }
 }
 
 async function startSystemPhase() {
+    if (skipRequested) return;
     console.log('Phase 2: System interface starting');
     showPhase('systemInterface');
     
     await sleep(appData.timing.crisisPhaseDelay);
-    await startCrisis();
+    if (!skipRequested) {
+        await startCrisis();
+    }
 }
 
 async function startCrisis() {
+    if (skipRequested) return;
     console.log('Crisis: Starting emergency sequence');
     
     const status = document.getElementById('systemStatus');
     const errors = document.getElementById('errorMessages');
     const interface = document.getElementById('systemInterface');
     
-    if (status && errors && interface) {
+    if (status && errors && interface && !skipRequested) {
         status.classList.add('critical');
         const statusText = status.querySelector('.status-text');
         if (statusText) {
@@ -376,72 +298,344 @@ async function startCrisis() {
         
         await sleep(appData.timing.alarmDuration);
         
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < 8 && !skipRequested; i++) {
             await sleep(150 + Math.random() * 200);
             interface.classList.toggle('glitch-active');
         }
     }
     
-    await sleep(2000);
-    startBriefing();
+    if (!skipRequested) {
+        await sleep(2000);
+        startBriefing();
+    }
 }
 
 async function startBriefing() {
+    if (skipRequested) return;
     console.log('Phase 3: Briefing starting');
     showPhase('briefingPhase');
     
     await typeText('briefingText', appData.narrative.briefingText, 25);
     
+    if (!skipRequested) {
+        setupReadyButton();
+    }
+}
+
+// FIXED: Separate function to setup ready button
+function setupReadyButton() {
     const button = document.getElementById('readyButton');
-    if (button) {
-        button.classList.remove('hidden');
+    if (!button) return;
+    
+    console.log('Setting up ready button');
+    button.classList.remove('hidden');
+    
+    // Remove any existing event listeners
+    const newButton = button.cloneNode(true);
+    button.parentNode.replaceChild(newButton, button);
+    
+    // Add event listener to the new button
+    newButton.addEventListener('click', function(e) {
+        console.log('Ready button clicked - going to mission hub');
+        e.preventDefault();
+        e.stopPropagation();
+        audio.playUIClick();
+        showMissionHub();
+    });
+    
+    // Make button clearly interactive
+    newButton.style.pointerEvents = 'auto';
+    newButton.style.cursor = 'pointer';
+    newButton.setAttribute('tabindex', '0');
+    
+    console.log('Ready button is now active');
+}
+
+function showMissionHub() {
+    console.log('=== SHOWING MISSION HUB ===');
+    showPhase('missionHub');
+    
+    // Reset skip flag now that we're in the hub
+    skipRequested = false;
+    
+    // Setup Protocol 1 (Mission 1)
+    setupProtocol1();
+    
+    // Setup Protocol 2 (Mission 2) 
+    setupProtocol2();
+    
+    console.log('Mission hub is now fully active');
+}
+
+function setupProtocol1() {
+    const protocol1 = document.getElementById('protocol1');
+    if (!protocol1) return;
+    
+    console.log('Setting up Protocol 1');
+    
+    // Remove existing listeners by cloning
+    const newProtocol1 = protocol1.cloneNode(true);
+    protocol1.parentNode.replaceChild(newProtocol1, protocol1);
+    
+    // Add new event listeners
+    newProtocol1.addEventListener('mouseenter', () => audio.playUIHover());
+    newProtocol1.addEventListener('click', function(e) {
+        console.log('Protocol 1 clicked!');
+        e.preventDefault();
+        e.stopPropagation();
+        audio.playUIClick();
+        selectedMission = 1;
+        showMissionModal();
+    });
+    
+    newProtocol1.style.cursor = 'pointer';
+}
+
+function setupProtocol2() {
+    const protocol2 = document.getElementById('protocol2');
+    if (!protocol2) return;
+    
+    console.log('Setting up Protocol 2');
+    
+    // Remove existing listeners by cloning
+    const newProtocol2 = protocol2.cloneNode(true);
+    protocol2.parentNode.replaceChild(newProtocol2, protocol2);
+    
+    // Add new event listeners
+    newProtocol2.addEventListener('mouseenter', () => audio.playUIHover());
+    newProtocol2.addEventListener('click', function(e) {
+        console.log('Protocol 2 clicked!');
+        e.preventDefault();
+        e.stopPropagation();
+        audio.playUIClick();
+        selectedMission = 2;
+        showPasswordModal();
+    });
+    
+    newProtocol2.style.cursor = 'pointer';
+}
+
+function showMissionModal() {
+    console.log('Modal: Showing level selection for mission', selectedMission);
+    const modal = document.getElementById('levelModal');
+    const modalTitle = document.getElementById('levelModalTitle');
+    
+    if (modal) {
+        // Update modal title based on mission
+        if (modalTitle) {
+            const missionName = selectedMission === 1 ? 'PROTOCOLO 1' : 'PROTOCOLO 2';
+            modalTitle.textContent = `${missionName}: SELECCIONAR RANGO DE MISIÓN`;
+        }
         
-        // Create completely new button
-        const newButton = button.cloneNode(true);
-        button.parentNode.replaceChild(newButton, button);
+        modal.classList.remove('hidden');
         
-        // Add multiple event types for maximum compatibility
-        newButton.addEventListener('click', handleReadyClick);
-        newButton.addEventListener('touchend', handleReadyClick);
-        newButton.addEventListener('mouseup', handleReadyClick);
+        // Setup level buttons
+        const buttons = document.querySelectorAll('.level-button');
+        buttons.forEach((button, index) => {
+            const level = button.getAttribute('data-level');
+            
+            // Clone to remove existing listeners
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+            
+            newButton.addEventListener('mouseenter', () => audio.playUIHover());
+            newButton.addEventListener('click', function(e) {
+                console.log('Level button clicked!', level);
+                e.preventDefault();
+                e.stopPropagation();
+                audio.playUIClick();
+                redirectToMission(selectedMission, level);
+            });
+        });
         
-        console.log('✓ Ready button is now active and clickable');
+        // Setup close button
+        const closeButton = document.getElementById('closeModal');
+        if (closeButton) {
+            const newCloseButton = closeButton.cloneNode(true);
+            closeButton.parentNode.replaceChild(newCloseButton, closeButton);
+            
+            newCloseButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                audio.playUIClick();
+                modal.classList.add('hidden');
+            });
+        }
+        
+        // Modal background close
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                audio.playUIClick();
+                modal.classList.add('hidden');
+            }
+        });
     }
 }
 
-function handleReadyClick(e) {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    console.log('✓ Ready button activated - advancing to mission hub');
-    audio.playUI();
-    startMissionHub();
-}
-
-// Skip intro functionality - GUARANTEED TO WORK
-function setupSkipButton() {
-    const skipButton = document.getElementById('skipButton');
-    if (skipButton) {
-        // Multiple event types for compatibility
-        skipButton.addEventListener('click', handleSkipClick);
-        skipButton.addEventListener('touchend', handleSkipClick);
-        skipButton.addEventListener('mouseup', handleSkipClick);
+function showPasswordModal() {
+    console.log('Modal: Showing password input for Mission 2');
+    const modal = document.getElementById('passwordModal');
+    if (modal) {
+        modal.classList.remove('hidden');
         
-        console.log('✓ Skip button is now active');
+        // Reset vault state
+        const vaultDoor = document.getElementById('vaultDoor');
+        const vaultInterior = document.getElementById('vaultInterior');
+        const passwordError = document.getElementById('passwordError');
+        const passwordInput = document.getElementById('passwordInput');
+        
+        if (vaultDoor) vaultDoor.classList.remove('opening');
+        if (vaultInterior) {
+            vaultInterior.classList.add('hidden');
+            vaultInterior.classList.remove('visible');
+        }
+        if (passwordError) passwordError.classList.add('hidden');
+        if (passwordInput) {
+            passwordInput.value = '';
+            setTimeout(() => passwordInput.focus(), 100);
+        }
+        
+        // Setup validation button
+        const validateButton = document.getElementById('validatePassword');
+        if (validateButton) {
+            const newValidateButton = validateButton.cloneNode(true);
+            validateButton.parentNode.replaceChild(newValidateButton, validateButton);
+            
+            newValidateButton.addEventListener('mouseenter', () => audio.playUIHover());
+            newValidateButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                audio.playUIClick();
+                validatePassword();
+            });
+        }
+        
+        // Setup password input
+        if (passwordInput) {
+            passwordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    validatePassword();
+                }
+            });
+            
+            if (isMobileDevice()) {
+                passwordInput.setAttribute('inputmode', 'text');
+                passwordInput.setAttribute('autocomplete', 'off');
+                passwordInput.setAttribute('autocorrect', 'off');
+                passwordInput.setAttribute('spellcheck', 'false');
+            }
+        }
+        
+        // Setup close button
+        const closeButton = document.getElementById('closePasswordModal');
+        if (closeButton) {
+            const newCloseButton = closeButton.cloneNode(true);
+            closeButton.parentNode.replaceChild(newCloseButton, closeButton);
+            
+            newCloseButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagagation();
+                audio.playUIClick();
+                modal.classList.add('hidden');
+            });
+        }
+        
+        // Modal background close
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                audio.playUIClick();
+                modal.classList.add('hidden');
+            }
+        });
     }
 }
 
-function handleSkipClick(e) {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    console.log('✓ Skip button clicked - jumping directly to mission hub');
-    audio.playUI();
-    startMissionHub();
+async function validatePassword() {
+    const passwordInput = document.getElementById('passwordInput');
+    const passwordError = document.getElementById('passwordError');
+    const validateButton = document.getElementById('validatePassword');
+    
+    if (!passwordInput || !passwordError || !validateButton) return;
+    
+    const password = passwordInput.value.trim();
+    
+    if (!password) {
+        showPasswordError('Por favor ingrese un código de acceso');
+        return;
+    }
+    
+    // Disable button during validation
+    validateButton.disabled = true;
+    validateButton.textContent = 'VALIDANDO...';
+    
+    await sleep(800);
+    
+    if (validateMission2Password(password)) {
+        console.log('Password valid! Opening vault...');
+        passwordError.classList.add('hidden');
+        audio.playUnlock();
+        
+        const animationDuration = openVaultAnimation();
+        
+        await sleep(animationDuration);
+        
+        document.getElementById('passwordModal').classList.add('hidden');
+        showMissionModal();
+        
+    } else {
+        console.log('Password invalid');
+        showPasswordError('❌ CÓDIGO INVÁLIDO - FORMATO REQUERIDO: AURORAxMxIxSxIxOxNx2');
+        audio.playError();
+    }
+    
+    validateButton.disabled = false;
+    validateButton.textContent = 'VALIDAR CÓDIGO';
+}
+
+function showPasswordError(message) {
+    const passwordError = document.getElementById('passwordError');
+    if (passwordError) {
+        passwordError.textContent = message;
+        passwordError.classList.remove('hidden');
+        
+        setTimeout(() => {
+            passwordError.classList.add('hidden');
+        }, 5000);
+    }
+}
+
+function redirectToMission(missionNumber, level) {
+    const missionKey = `mission${missionNumber}`;
+    const url = appData.missions[missionKey][level];
+    
+    if (url) {
+        console.log(`Redirecting to: ${url}`);
+        
+        const missionName = missionNumber === 1 ? 'PROTOCOLO 1' : 'PROTOCOLO 2';
+        const levelNames = {
+            primaria_baja: 'CADETE JUNIOR',
+            primaria_alta: 'CADETE',
+            secundaria: 'ESPECIALISTA',
+            preparatoria: 'INGENIERO/A DE CAMPO'
+        };
+        
+        alert(`¡MISIÓN ASIGNADA!\n\n${missionName} - ${levelNames[level]}\n\nSerás redirigido/a a la plataforma de misión externa.\n\n¡Buena suerte, cadete!`);
+        
+        window.open(url, '_blank');
+        document.getElementById('levelModal').classList.add('hidden');
+    } else {
+        console.error('URL not found for mission', missionNumber, 'level', level);
+        alert('Error: Misión no disponible');
+    }
 }
 
 // Atmospheric effects
 function addEffects() {
-    // Scanlines flicker
+    if (skipRequested) return;
+    
     setInterval(() => {
+        if (skipRequested) return;
         if (Math.random() < 0.08) {
             const scanlines = document.querySelector('.scanlines');
             if (scanlines) {
@@ -451,8 +645,8 @@ function addEffects() {
         }
     }, 1500);
     
-    // Screen flicker
     setInterval(() => {
+        if (skipRequested) return;
         if (Math.random() < 0.03) {
             document.body.style.filter = 'brightness(1.15)';
             setTimeout(() => document.body.style.filter = 'brightness(1)', 40);
@@ -462,13 +656,19 @@ function addEffects() {
 
 // Initialize everything
 function init() {
-    console.log('=== AURORA TERMINAL v3 INITIALIZING ===');
+    console.log('=== AURORA TERMINAL INITIALIZING ===');
+    console.log('Mission URLs loaded:', appData.missions);
+    
+    // Setup skip intro button
+    const skipButton = document.getElementById('skipIntroButton');
+    if (skipButton) {
+        skipButton.addEventListener('click', skipIntro);
+        skipButton.addEventListener('mouseenter', () => audio.playUIHover());
+    }
     
     // Enable audio on first interaction
     document.addEventListener('click', () => audio.initialize(), { once: true });
-    
-    // Setup skip button FIRST
-    setupSkipButton();
+    document.addEventListener('touchstart', () => audio.initialize(), { once: true });
     
     // Start atmospheric effects
     setTimeout(addEffects, 1000);
@@ -484,31 +684,11 @@ document.addEventListener('keydown', (e) => {
             case '1': startBootSequence(); break;
             case '2': startSystemPhase(); break;
             case '3': startBriefing(); break;
-            case '4': startMissionHub(); break;
-            case 'M': showMissionModal(1); break;
-            case 'N': showMissionModal(2); break;
-            case 'T': 
-                // Test Mission 2 password validation
-                const testPasswords = [
-                    "AURORAyMfIVSrI-O5Nd2",
-                    "AURORAFMgI#S3I5O8Nb2", 
-                    "AURORAvMeIaSxIx2O2Nx/2",
-                    "AURORAxMtIRSxI2O7Nx&2",
-                    "INVALID"
-                ];
-                testPasswords.forEach(pwd => {
-                    console.log(`Password "${pwd}": ${validateMission2Password(pwd) ? 'VALID' : 'INVALID'}`);
-                });
-                break;
+            case '4': showMissionHub(); break;
+            case 'M': showMissionModal(); break;
+            case 'P': showPasswordModal(); break;
+            case 'S': skipIntro(); break;
         }
-    }
-});
-
-// Emergency skip - press H to go directly to hub
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'h' || e.key === 'H') {
-        console.log('Emergency hub shortcut activated');
-        startMissionHub();
     }
 });
 
@@ -517,13 +697,17 @@ document.addEventListener('DOMContentLoaded', init);
 
 // Export for debugging
 window.auroraDebug = {
-    startMissionHub,
+    showPhase,
+    startBootSequence,
+    startBriefing,
+    showMissionHub,
     showMissionModal,
+    showPasswordModal,
     validateMission2Password,
-    unlockMission2,
-    setupProtocolButtons,
+    openVaultAnimation,
+    skipIntro,
     currentPhase,
-    currentMission,
+    selectedMission,
     audio,
     appData
 };
