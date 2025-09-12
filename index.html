@@ -1,1 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal de Recuperación de A.U.R.O.R.A.</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Skip Intro Button - appears on early phases -->
+    <button id="skipIntroButton" class="skip-intro-button">OMITIR INTRO</button>
+    
+    <!-- Scanlines overlay for CRT effect -->
+    <div class="scanlines"></div>
+    
+    <!-- Phase 1: Boot Sequence -->
+    <div id="bootSequence" class="phase">
+        <div class="terminal-content">
+            <div id="bootText"></div>
+            <span id="cursor" class="cursor">_</span>
+        </div>
+    </div>
 
+    <!-- Phase 2: System Interface and Crisis -->
+    <div id="systemInterface" class="phase hidden">
+        <div class="terminal-content">
+            <div class="system-header">
+                <h1>SISTEMA A.U.R.O.R.A.</h1>
+                <div class="mars-diagram">
+                    <div class="planet-mars"></div>
+                    <div class="orbit-line"></div>
+                    <div class="satellite"></div>
+                </div>
+            </div>
+            <div class="status-panel">
+                <div id="systemStatus" class="status-indicator">
+                    <span class="status-text">ESTADO DEL SISTEMA: ÓPTIMO</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Error messages that appear during glitch -->
+        <div id="errorMessages" class="error-overlay hidden">
+            <div class="error-message">[DATA CORRUPTION]</div>
+            <div class="error-message">[CASCADE FAILURE]</div>
+            <div class="error-message">[SYSTEM OVERLOAD]</div>
+            <div class="error-message">[CRITICAL ERROR]</div>
+        </div>
+    </div>
+
+    <!-- Phase 3: Briefing -->
+    <div id="briefingPhase" class="phase hidden">
+        <div class="terminal-content">
+            <div class="transmission-window">
+                <div class="window-header">
+                    <span class="priority-indicator">TRANSMISIÓN ENTRANTE - ALTA PRIORIDAD</span>
+                </div>
+                <div class="window-content">
+                    <div id="briefingText"></div>
+                    <button id="readyButton" class="action-button hidden">
+                        [SÍ, ESTOY LISTO/A]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phase 4: Mission Hub -->
+    <div id="missionHub" class="phase hidden">
+        <div class="terminal-content">
+            <div class="hub-header">
+                <h2>MODO DE RECUPERACIÓN DE SOFTWARE</h2>
+            </div>
+            <div class="protocols-container">
+                <div id="protocol1" class="protocol-block clickable">
+                    <div class="protocol-header">PROTOCOLO 1: INSPECCIÓN SINTÁCTICA</div>
+                    <div class="protocol-status status-critical">REQUIERE ATENCIÓN INMEDIATA</div>
+                </div>
+                <div id="protocol2" class="protocol-block clickable">
+                    <div class="protocol-header">PROTOCOLO 2: CALIBRACIÓN DE SECUENCIA</div>
+                    <div class="protocol-status status-locked">🔒 REQUIERE CÓDIGO DE ACCESO</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mission Level Selection Modal -->
+    <div id="levelModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="levelModalTitle">SELECCIONAR RANGO DE MISIÓN</h3>
+                <button id="closeModal" class="close-button">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="level-options">
+                    <button class="level-button" data-level="primaria_baja">
+                        <div class="level-name">CADETE JUNIOR (Primaria Baja)</div>
+                        <div class="level-description">Misiones básicas de reconocimiento</div>
+                    </button>
+                    <button class="level-button" data-level="primaria_alta">
+                        <div class="level-name">CADETE (Primaria Alta)</div>
+                        <div class="level-description">Operaciones de campo estándar</div>
+                    </button>
+                    <button class="level-button" data-level="secundaria">
+                        <div class="level-name">ESPECIALISTA (Secundaria)</div>
+                        <div class="level-description">Misiones de complejidad media</div>
+                    </button>
+                    <button class="level-button" data-level="preparatoria">
+                        <div class="level-name">INGENIERO/A DE CAMPO (Preparatoria)</div>
+                        <div class="level-description">Operaciones avanzadas de recuperación</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Modal for Mission 2 -->
+    <div id="passwordModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔒 PROTOCOLO 2: CÓDIGO DE ACCESO REQUERIDO</h3>
+                <button id="closePasswordModal" class="close-button">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="password-container">
+                    <div class="vault-display" id="vaultDisplay">
+                        <div class="vault-door" id="vaultDoor">
+                            <div class="vault-lock"></div>
+                            <div class="vault-handle"></div>
+                        </div>
+                        <div class="vault-interior hidden" id="vaultInterior">
+                            <div class="vault-glow"></div>
+                            <div class="mission-data">PROTOCOLO 2 DESBLOQUEADO</div>
+                        </div>
+                    </div>
+                    <div class="password-input-section">
+                        <label for="passwordInput" class="password-label">INGRESE CÓDIGO DE ACCESO:</label>
+                        <input type="text" id="passwordInput" class="password-input" placeholder="AURORAxMxIxSxIxOxNx2" autocomplete="off">
+                        <button id="validatePassword" class="action-button">VALIDAR CÓDIGO</button>
+                        <div id="passwordError" class="password-error hidden">❌ CÓDIGO INVÁLIDO - FORMATO REQUERIDO: AURORAxMxIxSxIxOxNx2</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
