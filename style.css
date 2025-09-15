@@ -1,3 +1,5 @@
+--- START OF FILE style.css ---
+
 :root {
   /* Primitive Color Tokens */
   --color-white: rgba(255, 255, 255, 1);
@@ -84,15 +86,18 @@
     BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-family-mono: "Berkeley Mono", ui-monospace, SFMono-Regular, Menlo,
     Monaco, Consolas, monospace;
-  --font-size-xs: 11px;
-  --font-size-sm: 12px;
-  --font-size-base: 14px;
-  --font-size-md: 14px;
-  --font-size-lg: 16px;
-  --font-size-xl: 18px;
-  --font-size-2xl: 20px;
-  --font-size-3xl: 24px;
-  --font-size-4xl: 30px;
+    
+  /* CAMBIO: Tamaños de fuente aumentados en un 25% */
+  --font-size-xs: 13.75px;  /* 11px * 1.25 */
+  --font-size-sm: 15px;      /* 12px * 1.25 */
+  --font-size-base: 17.5px;   /* 14px * 1.25 */
+  --font-size-md: 17.5px;    /* 14px * 1.25 */
+  --font-size-lg: 20px;      /* 16px * 1.25 */
+  --font-size-xl: 22.5px;    /* 18px * 1.25 */
+  --font-size-2xl: 25px;     /* 20px * 1.25 */
+  --font-size-3xl: 30px;     /* 24px * 1.25 */
+  --font-size-4xl: 37.5px;   /* 30px * 1.25 */
+
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 550;
@@ -746,7 +751,8 @@ select.form-control {
 }
 
 body {
-    font-family: 'VT323', monospace;
+    /* CAMBIO: Fuente cambiada a Roboto */
+    font-family: 'Roboto', sans-serif;
     background: #020a1a;
     color: #00ffff;
     overflow: hidden;
@@ -767,8 +773,9 @@ body {
     border: 2px solid #ffaa00;
     color: #ffaa00;
     padding: 8px 16px;
-    font-family: 'VT323', monospace;
-    font-size: 16px;
+    /* CAMBIO: Fuente y tamaño */
+    font-family: 'Roboto', sans-serif;
+    font-size: 20px; /* 16px * 1.25 */
     cursor: pointer;
     border-radius: 5px;
     transition: all 0.3s ease;
@@ -838,7 +845,8 @@ body {
 }
 
 #bootText {
-    font-size: 24px;
+    /* CAMBIO: Tamaño de fuente */
+    font-size: 30px; /* 24px * 1.25 */
     line-height: 1.8;
     text-shadow: 0 0 5px #00ffff;
     margin-bottom: 10px;
@@ -847,7 +855,8 @@ body {
 .cursor {
     color: #00ff00;
     animation: blink 1s infinite;
-    font-size: 24px;
+    /* CAMBIO: Tamaño de fuente */
+    font-size: 30px; /* 24px * 1.25 */
     text-shadow: 0 0 5px #00ff00;
 }
 
@@ -863,7 +872,8 @@ body {
 }
 
 .system-header h1 {
-    font-size: 48px;
+    /* CAMBIO: Tamaño de fuente */
+    font-size: 60px; /* 48px * 1.25 */
     color: #00ff00;
     text-shadow: 0 0 10px #00ff00;
     margin-bottom: 30px;
@@ -945,7 +955,8 @@ body {
 }
 
 .status-text {
-    font-size: 24px;
+    /* CAMBIO: Tamaño de fuente */
+    font-size: 30px; /* 24px * 1.25 */
     color: #00ff00;
     text-shadow: 0 0 5px #00ff00;
 }
@@ -981,7 +992,8 @@ body {
 .error-message {
     position: absolute;
     color: #ff0000;
-    font-size: 28px;
+    /* CAMBIO: Tamaño de fuente */
+    font-size: 35px; /* 28px * 1.25 */
     font-weight: bold;
     text-shadow: 0 0 10px #ff0000;
     animation: error-flash 0.2s infinite alternate;
@@ -1016,7 +1028,8 @@ body {
 }
 
 .priority-indicator {
-    font-size: 20px;
+    /* CAMBIO: Tamaño de fuente */
+    font-size: 25px; /* 20px * 1.25 */
     color: #ff0000;
     text-shadow: 0 0 10px #ff0000;
     font-weight: bold;
@@ -1033,7 +1046,8 @@ body {
 }
 
 #briefingText {
-    font-size: 18px;
+    /* CAMBIO: Tamaño de fuente */
+    font-size: 22.5px; /* 18px * 1.25 */
     line-height: 1.6;
     text-shadow: 0 0 5px #00ffff;
     margin-bottom: 30px;
@@ -1044,8 +1058,9 @@ body {
     border: 2px solid #00ff00;
     color: #00ff00;
     padding: 12px 24px;
-    font-family: 'VT323', monospace;
-    font-size: 20px;
+    /* CAMBIO: Fuente y tamaño */
+    font-family: 'Roboto', sans-serif;
+    font-size: 25px; /* 20px * 1.25 */
     cursor: pointer;
     border-radius: 5px;
     transition: all 0.3s ease;
@@ -1067,7 +1082,8 @@ body {
 }
 
 .hub-header h2 {
-    font-size: 36px;
+    /* CAMBIO: Tamaño de fuente */
+    font-size: 45px; /* 36px * 1.25 */
     color: #00ff00;
     text-shadow: 0 0 10px #00ff00;
     letter-spacing: 2px;
@@ -1106,13 +1122,15 @@ body {
 }
 
 .protocol-header {
-    font-size: 24px;
+    /* CAMBIO: Tamaño de fuente */
+    font-size: 30px; /* 24px * 1.25 */
     margin-bottom: 10px;
     text-shadow: 0 0 5px currentColor;
 }
 
 .protocol-status {
-    font-size: 16px;
+    /* CAMBIO: Tamaño de fuente */
+    font-size: 20px; /* 16px * 1.25 */
     padding: 8px 12px;
     border-radius: 4px;
     display: inline-block;
@@ -1187,7 +1205,8 @@ body {
 }
 
 .modal-header h3 {
-    font-size: 24px;
+    /* CAMBIO: Tamaño de fuente */
+    font-size: 30px; /* 24px * 1.25 */
     color: #00ffff;
     text-shadow: 0 0 10px #00ffff;
 }
@@ -1199,7 +1218,8 @@ body {
     background: transparent;
     border: none;
     color: #00ffff;
-    font-size: 24px;
+    /* CAMBIO: Tamaño de fuente */
+    font-size: 30px; /* 24px * 1.25 */
     cursor: pointer;
     padding: 5px;
     transition: all 0.3s ease;
@@ -1225,7 +1245,8 @@ body {
     border: 2px solid #00ff00;
     color: #00ff00;
     padding: 15px 20px;
-    font-family: 'VT323', monospace;
+    /* CAMBIO: Fuente */
+    font-family: 'Roboto', sans-serif;
     cursor: pointer;
     border-radius: 5px;
     transition: all 0.3s ease;
@@ -1240,14 +1261,16 @@ body {
 }
 
 .level-name {
-    font-size: 18px;
+    /* CAMBIO: Tamaño de fuente */
+    font-size: 22.5px; /* 18px * 1.25 */
     font-weight: bold;
     margin-bottom: 5px;
     text-shadow: 0 0 5px #00ff00;
 }
 
 .level-description {
-    font-size: 14px;
+    /* CAMBIO: Tamaño de fuente */
+    font-size: 17.5px; /* 14px * 1.25 */
     opacity: 0.8;
 }
 
@@ -1353,7 +1376,8 @@ body {
 }
 
 .mission-data {
-    font-size: 16px;
+    /* CAMBIO: Tamaño de fuente */
+    font-size: 20px; /* 16px * 1.25 */
     color: #00ffff;
     text-shadow: 0 0 10px #00ffff;
     z-index: 1;
@@ -1367,7 +1391,8 @@ body {
 }
 
 .password-label {
-    font-size: 18px;
+    /* CAMBIO: Tamaño de fuente */
+    font-size: 22.5px; /* 18px * 1.25 */
     color: #00ffff;
     text-shadow: 0 0 5px #00ffff;
 }
@@ -1377,8 +1402,9 @@ body {
     border: 2px solid #00ffff;
     border-radius: 5px;
     padding: 12px 15px;
-    font-family: 'VT323', monospace;
-    font-size: 18px;
+    /* CAMBIO: Fuente y tamaño */
+    font-family: 'Roboto', sans-serif;
+    font-size: 22.5px; /* 18px * 1.25 */
     color: #00ffff;
     text-align: center;
     letter-spacing: 2px;
@@ -1399,7 +1425,8 @@ body {
 
 .password-error {
     color: #ff0000;
-    font-size: 16px;
+    /* CAMBIO: Tamaño de fuente */
+    font-size: 20px; /* 16px * 1.25 */
     text-shadow: 0 0 10px #ff0000;
     background: rgba(255, 0, 0, 0.1);
     border: 1px solid #ff0000;
@@ -1429,7 +1456,8 @@ body {
     .skip-intro-button {
         top: 10px;
         right: 10px;
-        font-size: 14px;
+        /* CAMBIO: Tamaño de fuente */
+        font-size: 17.5px; /* 14px * 1.25 */
         padding: 6px 12px;
     }
 
@@ -1438,11 +1466,13 @@ body {
     }
     
     #bootText {
-        font-size: 18px;
+        /* CAMBIO: Tamaño de fuente */
+        font-size: 22.5px; /* 18px * 1.25 */
     }
     
     .system-header h1 {
-        font-size: 32px;
+        /* CAMBIO: Tamaño de fuente */
+        font-size: 40px; /* 32px * 1.25 */
     }
     
     .mars-diagram {
@@ -1460,7 +1490,8 @@ body {
     }
     
     .password-input {
-        font-size: 16px;
+        /* CAMBIO: Tamaño de fuente */
+        font-size: 20px; /* 16px * 1.25 */
     }
     
     .vault-display {
