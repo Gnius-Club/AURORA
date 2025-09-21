@@ -622,7 +622,10 @@ function redirectToMission(missionNumber, level) {
         
         alert(`¡MISIÓN ASIGNADA!\n\n${missionName} - ${levelNames[level]}\n\nSerás redirigido/a a la plataforma de misión externa.\n\n¡Buena suerte, cadete!`);
         
-        window.open(url, '_blank');
+        // ***** CAMBIO REALIZADO AQUÍ *****
+        // Se abre el enlace en la misma ventana, en lugar de una nueva.
+        window.location.href = url;
+        
         document.getElementById('levelModal').classList.add('hidden');
     } else {
         console.error('URL not found for mission', missionNumber, 'level', level);
