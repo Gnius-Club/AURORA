@@ -612,18 +612,9 @@ function redirectToMission(missionNumber, level) {
     if (url) {
         console.log(`Redirecting to: ${url}`);
         
-        const missionName = missionNumber === 1 ? 'PROTOCOLO 1' : 'PROTOCOLO 2';
-        const levelNames = {
-            primaria_baja: 'CADETE JUNIOR',
-            primaria_alta: 'CADETE',
-            secundaria: 'ESPECIALISTA',
-            preparatoria: 'INGENIERO/A DE CAMPO'
-        };
-        
-        alert(`¡MISIÓN ASIGNADA!\n\n${missionName} - ${levelNames[level]}\n\nSerás redirigido/a a la plataforma de misión externa.\n\n¡Buena suerte, cadete!`);
-        
         // ***** CAMBIO REALIZADO AQUÍ *****
-        // Se abre el enlace en la misma ventana, en lugar de una nueva.
+        // La ventana emergente (alert) ha sido eliminada para una redirección inmediata.
+        
         window.location.href = url;
         
         document.getElementById('levelModal').classList.add('hidden');
