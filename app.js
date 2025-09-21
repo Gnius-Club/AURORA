@@ -612,9 +612,19 @@ function redirectToMission(missionNumber, level) {
     if (url) {
         console.log(`Redirecting to: ${url}`);
         
-        // ***** CAMBIO REALIZADO AQUÍ *****
-        // La ventana emergente (alert) ha sido eliminada para una redirección inmediata.
+        /*
+        // CÓDIGO ANTERIOR QUE MOSTRABA LA ALERTA
+        const missionName = missionNumber === 1 ? 'PROTOCOLO 1' : 'PROTOCOLO 2';
+        const levelNames = {
+            primaria_baja: 'CADETE JUNIOR',
+            primaria_alta: 'CADETE',
+            secundaria: 'ESPECIALISTA',
+            preparatoria: 'INGENIERO/A DE CAMPO'
+        };
+        alert(`¡MISIÓN ASIGNADA!\n\n${missionName} - ${levelNames[level]}\n\nSerás redirigido/a a la plataforma de misión externa.\n\n¡Buena suerte, cadete!`);
+        */
         
+        // NUEVO CÓDIGO: Redirección directa sin alerta
         window.location.href = url;
         
         document.getElementById('levelModal').classList.add('hidden');
